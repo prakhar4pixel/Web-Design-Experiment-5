@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weather App</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .weather-container {
+            background: white;
+            width: 380px;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        #weatherResult {
+            margin-top: 20px;
+        }
+
+        .weather-card {
+            background: #f4f8fb;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .weather-card h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .weather-card p {
+            margin: 10px 0;
+            font-size: 17px;
+            color: #555;
+        }
+
+        .error {
+            color: red;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="weather-container">
+
+        <h1>Weather App</h1>
+
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <button onclick="getWeather()">Search</button>
+        </div>
+
+        <div id="weatherResult"></div>
+
+    </div>
+
+    <script>
+        async function getWeather() {
+
+            const city = document.getElementById("cityInput").value.trim();
+            const result = document.getElementById("weatherResult");
+
+            if (city === "") {
+                result.innerHTML = "<p class='error'>Please enter a city name.</p>";
+                return;
+            }
+
+            result.innerHTML = "<p>Loading weather data...</p>";
+
+            try {
+
+                // Fetch city coordinates
+                const locationResponse = await fetch(
+                    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`
+                );
+
+                const locationData = await locationResponse.json();
+
+                if (!locationData.results) {
+                    result.innerHTML = "<p class='error'>City not found.</p>";
+                    return;
+                }
+
+                const latitude = locationData.results[0].latitude;
+                const longitude = locationData.results[0].longitude;
+                const cityName = locationData.results[0].name;
+
+                // Fetch weather data
+                const weatherResponse = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m&timezone=auto`
+                );
+
+                const weatherData = await weatherResponse.json();
+
+                const current = weatherData.current;
+
+                result.innerHTML = `
+                    <div class="weather-card">
+                        <h2>${cityName}</h2>
+
+                        <p>🌡️ Temperature: ${current.temperature_2m} °C</p>
+
+                        <p>💧 Humidity: ${current.relative_humidity_2m}%</p>
+
+                        <p>🌡️ Feels Like: ${current.apparent_temperature} °C</p>
+
+                        <p>💨 Wind Speed: ${current.wind_speed_10m} km/h</p>
+                    </div>
+                `;
+
+            } catch (error) {
+
+                result.innerHTML =
+                    "<p class='error'>Unable to fetch weather data. Please try again.</p>";
+            }
+        }
+    </script>
+
+</body>
+</html>
